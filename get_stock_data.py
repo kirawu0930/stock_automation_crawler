@@ -19,6 +19,13 @@ def clean_numeric(text:str)->str:
     cleaned=text.replace(',','').strip()
     return cleaned if cleaned.replace('.', '', 1).isdigit() else "0"
 
+def get_field_value(page:Page,field_name:str):
+    try:
+        raw_data=page.locator('li.price-detail-item').filter(has=page.get_by_text(field_name,exact=True)).locator("span").filter(has_text=re.compile(r"^[0-9.,]+$")).first.inner_text()
+        return clean_numeric(raw_data)
+    except Exception as e:
+        print(f"{field_name}:{e}")
+
 def get_stock_data(page: Page,stock_id: str):
     print("正在開啟網頁...")
     page.goto(f"https://tw.stock.yahoo.com/quote/{stock_id}.TW", wait_until="domcontentloaded", timeout=60000)
@@ -29,14 +36,15 @@ def get_stock_data(page: Page,stock_id: str):
     print(f"個股名稱: {stock_name}")
 #       print(f"個股名稱: {stock_name_01}")
                 # 抓取股價 (使用 Yahoo 的類別特徵)
-    raw_price=page.get_by_text("成交",exact=True).locator('+span').filter(has_text=re.compile(r".+")).inner_text()
-    price = clean_numeric(raw_price)
+    #raw_price=page.get_by_text("成交",exact=True).locator('+span').filter(has_text=re.compile(r".+")).inner_text()
+    #raw_price=page.locator('li.price-detail-item').filter(has=page.get_by_text("成交",exact=True)).locator("span").filter(has_text=re.compile(r"^[0-9.,]+$")).first.inner_text()
+    price = get_field_value(page,"成交")
     print(f"目前股價: {price}")
-    yesterday_close = page.get_by_text("昨收",exact=True).locator('+span').filter(has_text=re.compile(r".+")).inner_text()
+    yesterday_close =get_field_value(page,"昨收")
     print(f"昨收價: {yesterday_close}")
-    high = page.get_by_text("最高",exact=True).locator('+span').filter(has_text=re.compile(r".+")).inner_text()
+    high = get_field_value(page,"最高")
     print(f"最高股價: {high}")
-    low = page.get_by_text("最低",exact=True).locator('+span').filter(has_text=re.compile(r".+")).inner_text()
+    low = get_field_value(page,"最低")
     print(f"最低股價: {low}")
                 #page.pause() # 讓視窗停住，方便你觀察
     date_time=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')           
@@ -61,8 +69,8 @@ def run():
         browser=p.chromium.launch(headless=False,args=["--star-maximized"])
         context=browser.new_context(offline=False,http_credentials=None)
         page = context.new_page()
-        target_stocks = ["2300"]
-        target_stocks += [str(i) for i in range(2301,2310)]
+        target_stocks = ["2301"]
+        target_stocks += [str(i) for i in range(2302,2311)]
                     
         for stock_id in target_stocks:
             start_time = time.perf_counter()
